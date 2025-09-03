@@ -11,6 +11,8 @@ const generateTokens = async (userId) => {
         const session = await User.findById(userId)
         const accessTokens = session.accessTokens()
         const refreshTokens = session.refreshTokens()
+
+        session.refreshToken = refreshTokens
         await session.save({ validateBeforeSave: false })
         return { accessTokens, refreshTokens }
     } catch (error) {
@@ -158,9 +160,62 @@ const login = asyncHandler(async (req, res) => {
         )
 
 })
+const forgetPassword = asyncHandler(async (req, res) => {
+    const { email } = req.body
+    if (!email) {
+        throw new ApiError(400, 'Email is required')
+    }
+    const user = await User.findOne({ email: email.trim() })
+    if (!user) {
+        throw new ApiError(400, 'User not existed')
+    }
+    const verificationCode = Math.floor(
+        100000 + Math.random() * 900000
+    ).toString();
+    
+    user.verifyCode = verificationCode
+    user.verifyCodeExpiry =  Date.now() + 15 * 60 * 1000;
+    await user.save()
 
+    const url = `https://localhost:3000/api/v1/users/reset-password?code=${user.verifyCode}`
+
+    const emailResponse = await sendVerifcationEmail(user.username, email, verificationCode, url)
+
+    if (!emailResponse) {
+        throw new ApiError(500, 'failed to send verification email')
+    }
+    return res.status(200)
+        .json(
+            new ApiResponse(200, 'user Found successfully', user)
+        )
+})
+const resetPassword = asyncHandler(async (req, res) => {
+    const { username } = req.params
+    const { verifyCode, newPassword } = req.body
+
+    if (!username) {
+        throw new ApiError(400, 'User not found')
+    }
+    if (!verifyCode || !newPassword) {
+        throw new ApiError(400, 'Credentials must be required')
+    }
+    const user = await User.findOne({ username: username.trim() })
+
+    if (user.verifyCode !== verifyCode) {
+        throw new ApiError(400, 'user token is expired or invalid')
+    }
+
+    user.password = newPassword
+    user.verifyCode = undefined
+    user.verifyCodeExpiry = undefined
+    await user.save()
+
+    return res.status(200).json(new ApiResponse(200, 'Your Password is Reset'), user)
+})
 export {
     registerUser,
     verificationUser,
-    login
+    login,
+    forgetPassword,
+    resetPassword,
 }
