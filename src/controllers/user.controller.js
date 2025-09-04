@@ -1,7 +1,7 @@
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
-import { uploadOnCLoudinary } from "../utils/cloudinary.js";
+import { deleteOnCloudinary, uploadOnCLoudinary } from "../utils/cloudinary.js";
 import { sendVerifcationEmail } from "../helper/sendVerification.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
@@ -172,12 +172,12 @@ const forgetPassword = asyncHandler(async (req, res) => {
     const verificationCode = Math.floor(
         100000 + Math.random() * 900000
     ).toString();
-    
+
     user.verifyCode = verificationCode
-    user.verifyCodeExpiry =  Date.now() + 15 * 60 * 1000;
+    user.verifyCodeExpiry = Date.now() + 15 * 60 * 1000;
     await user.save()
 
-    const url = `https://localhost:3000/api/v1/users/reset-password?code=${user.verifyCode}`
+    const url = `https://localhost:3000/api/v1/users/reset-password?username=${user.username}`
 
     const emailResponse = await sendVerifcationEmail(user.username, email, verificationCode, url)
 
@@ -212,10 +212,72 @@ const resetPassword = asyncHandler(async (req, res) => {
 
     return res.status(200).json(new ApiResponse(200, 'Your Password is Reset'), user)
 })
+const changeAvatar = asyncHandler(async (req, res) => {
+    const localFilePath = req.file?.path
+    if (!localFilePath) {
+        throw new ApiError(400, 'local file path is requires')
+    }
+
+
+    const findUser = await User.findById(req.user?._id)
+
+    if (!findUser) {
+        throw new ApiError(400, 'user not Found')
+    }
+    if (findUser.avatar) {
+        const publicId = findUser.avatar.split('/').pop().split('.')[0]
+        if (publicId) {
+            await deleteOnCloudinary(publicId)
+        }
+    }
+
+    const avatar = await uploadOnCLoudinary(localFilePath)
+
+    const updatedUser = await User.findByIdAndUpdate(req.user?._id, {
+        $set: {
+            avatar: avatar.url || ''
+        }
+    }, { new: true })
+
+    const user = await User.findById(updatedUser._id).select('-password -refreshToken')
+
+    return res.status(200)
+        .json(
+            new ApiResponse(200, 'Avatar change successfully', user)
+        )
+})
+const getCurrentUser = asyncHandler(async(req,res)=>{
+    const user = await User.findById(req.user._id).select('-password -refreshToken')
+    if(!user){
+        throw new ApiError(400, 'User not Found')
+    }
+    return res.status(200).json(
+        new ApiResponse(200, 'User fetche Successfully', user)
+    )
+})
+const logout = asyncHandler(async(req, res)=>{
+    const user = await User.findByIdAndUpdate(req.user._id, {
+        $unset : {
+            refreshToken : 1
+        }
+    }, {new: true})
+const option = {
+    httpOnly : true,
+    secure : true
+}
+    return res.status(200)
+    .clearCookie('accessToken', accessToken , option)
+    .clearCookie('refreshTokens', refreshTokens, option)
+    .json(new ApiResponse(200, 'user logout successfully'))
+
+})
 export {
     registerUser,
     verificationUser,
     login,
     forgetPassword,
     resetPassword,
+    changeAvatar,
+    getCurrentUser,
+    logout
 }
