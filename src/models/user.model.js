@@ -2,6 +2,20 @@ import mongoose from "mongoose";
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 const userSchema = new mongoose.Schema({
+    fullName: {
+        firstName: {
+            type: String,
+            required: true,
+            trim: true,
+            minLength: [3, 'Minimun 3 character']
+        },
+        lastName: {
+            type: String,
+            required: true,
+            trim: true,
+            minLength: [3, 'Minimun 3 character']
+        }
+    },
     username: {
         type: String,
         required: true,
@@ -15,9 +29,9 @@ const userSchema = new mongoose.Schema({
         unique: true,
         match: [/.+\@.+\..+/, "please enter valid email"],
     },
-    avatar : {
-        type : String,
-        required : true
+    avatar: {
+        type: String,
+        required: true
     },
     password: {
         type: String,
@@ -56,25 +70,22 @@ const userSchema = new mongoose.Schema({
         unique: true,
         trim: true
     },
-    vehcile: {
-        image: String,
-        make: String,
-        model: String,
-        plateNumber: String
+    socketId: {
+        type: String
     }
 }, { timestamps: true })
 
 userSchema.pre('save', async function (next) {
     if (!this.isModified('password')) return next()
     this.password = await bcrypt.hash(this.password, 10)
-next()
+    next()
 })
 userSchema.methods.isCorrectedPassword = async function (password) {
-   return await bcrypt.compare(password, this.password)
+    return await bcrypt.compare(password, this.password)
 }
 
 userSchema.methods.accessTokens = function () {
-  return  jwt.sign(
+    return jwt.sign(
         {
             _id: this._id,
             email: this.email,
@@ -88,7 +99,7 @@ userSchema.methods.accessTokens = function () {
     )
 }
 userSchema.methods.refreshTokens = function () {
-  return  jwt.sign(
+    return jwt.sign(
         {
             _id: this._id,
         },
