@@ -15,3 +15,12 @@ app.use(cookieParser())
 
 
 export { app }
+
+
+//import routers
+
+import userRouter from './routes/user.route.js'
+import captainRouter from './routes/captain.route.js'
+
+app.use('/api/v1/users', userRouter )
+app.use('/api/v1/captains', captainRouter)

@@ -29,10 +29,6 @@ const userSchema = new mongoose.Schema({
         unique: true,
         match: [/.+\@.+\..+/, "please enter valid email"],
     },
-    avatar: {
-        type: String,
-        required: true
-    },
     password: {
         type: String,
         required: true,
@@ -64,11 +60,6 @@ const userSchema = new mongoose.Schema({
         unique: true,
         trim: true,
         required: true,
-    },
-    Licence: {
-        type: String,
-        unique: true,
-        trim: true
     },
     socketId: {
         type: String
