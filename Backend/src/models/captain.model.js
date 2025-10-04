@@ -34,8 +34,7 @@ const captainSchema = new mongoose.Schema({
     },
     status: {
         type: Boolean,
-        default: 'INACTIVE',
-        enum: ['ACTIVE', 'INACTIVE', 'BUSY']
+        default: false,
     },
     phone: {
         type: String,

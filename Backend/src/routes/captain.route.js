@@ -23,7 +23,7 @@ router.route('/register', [
     body('vechile.vechileType').isLength({ min: 3 }).withMessage('Invalid vechile type'),
 ]).post(registerCaptian)
 
-router.route('login', [
+router.route('/login', [
     body('email').isLength({ min: 3 }).withMessage('Invalid email'),
     body('password').isLength({ min: 3 }).withMessage('Invalid password'),
 ]).post(loginCaptain)

@@ -25,28 +25,28 @@ const registerCaptian = asyncHandler(async (req, res) => {
     if (!error.isEmpty()) {
         throw new ApiError(400, { errors: error.array() })
     }
-    const { fullName, email, password, phone, vechile } = req.body
+    const { fullName, email, password, phone, vehicle } = req.body
 
     const findCaptain = await Captain.findOne({ email: email.trim() }, { phone })
     if (findCaptain) {
         throw new ApiError(400, 'captain already exist and please choose a unique phone number')
     }
-    if ([fullName, email, password, phone, vechile].some((fields) => fields === '')) {
+    if ([fullName, email, password, phone, vehicle].some((fields) => fields === '')) {
         throw new ApiError(400, 'fields must be required')
     }
     const createdCaptain = await Captain.create({
         fullName: {
-            firstname: fullName.firstname,
+            firstName: fullName.firstName,
             lastName: fullName.lastName
         },
         email: email.trim(),
         password,
         phone,
-        vechile: {
-            color: vechile.color,
-            plate: vechile.plate,
-            capacity: vechile.capacity,
-            vechileType: vechile.vechileType
+        vehicle: {
+            color: vehicle.color,
+            plate: vehicle.plate,
+            capacity: vehicle.capacity,
+            vehicleType: vehicle.vehicleType
         }
     })
     if (!createdCaptain) {
@@ -63,13 +63,13 @@ const loginCaptain = asyncHandler(async (req, res) => {
         throw new ApiError(400, { errors: error.array() })
     }
 
-    const { email, password } = req.body()
+    const { email, password } = req.body
     if ([email, password].some((fields) => fields === '')) {
         throw new ApiError(400, 'fields must be required')
     }
 
     const findCaptain = await Captain.findOne({ email: email.trim() })
-    if (findCaptain) {
+    if (!findCaptain) {
         throw new ApiError(400, 'captain not found')
     }
 
@@ -77,18 +77,20 @@ const loginCaptain = asyncHandler(async (req, res) => {
     if (!checkPassword) {
         throw new ApiError(400, 'invalid password')
     }
+    
     const { accessToken, refreshToken } = await generatedAccessTokenRefresToken(findCaptain._id)
 
     const options = {
         httpOnly: true,
         secure: true
     }
+    const captain = await Captain.findById(findCaptain._id).select('-password -refreshToken')
     res.status(200)
         .cookie('accessToken', accessToken, options)
         .cookie('refreshToken', refreshToken, options)
         .json(
             new ApiResponse(200, ' captain login', {
-                captain: findCaptain,
+                captain,
                 accessToken,
                 refreshToken
             })
@@ -136,12 +138,13 @@ const logoutCaptain = asyncHandler(async (req, res) => {
 })
 const updateStatus = asyncHandler(async (req, res) => {
     const findCaptain = await Captain.findById(req.captain._id)
+
     if (!findCaptain) {
         throw new ApiError(400, 'captian not found')
     }
     findCaptain.status = !findCaptain.status
     await findCaptain.save()
-    return res.stauts(200).json(
+    return res.status(200).json(
         new ApiResponse(200, 'status updated', findCaptain.status)
     )
 
