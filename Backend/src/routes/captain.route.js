@@ -9,6 +9,7 @@ import {
     updateStatus
 } from '../controllers/captain.controller.js'
 import { verifyCaptain } from '../middleware/captain.middleware.js'
+import { verifyUser } from '../middleware/auth.middleware.js'
 const router = Router()
 
 
@@ -21,7 +22,7 @@ router.route('/register', [
     body('vechile.plate').isLength({ min: 3 }).withMessage('Invalid vechile plate'),
     body('vechile.capacity').isLength({ min: 3 }).withMessage('Invalid vechile capacity'),
     body('vechile.vechileType').isLength({ min: 3 }).withMessage('Invalid vechile type'),
-]).post(registerCaptian)
+]).post(verifyUser, registerCaptian)
 
 router.route('/login', [
     body('email').isLength({ min: 3 }).withMessage('Invalid email'),

@@ -21,6 +21,8 @@ export { app }
 
 import userRouter from './routes/user.route.js'
 import captainRouter from './routes/captain.route.js'
+import mapRouter from './routes/map.route.js'
 
 app.use('/api/v1/users', userRouter )
 app.use('/api/v1/captains', captainRouter)
+app.use('/api/v1/map', mapRouter)

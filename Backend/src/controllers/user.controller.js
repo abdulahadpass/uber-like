@@ -88,13 +88,17 @@ const login = asyncHandler(async (req, res) => {
     const user = await User.findById(findUser._id).select('-password -refreshToken')
     const options = {
         httpOnly: true,
-        secure: true
+        secure: false,
+         sameSite: 'none'
     }
     return res.status(200)
         .cookie('accessToken', accessToken, options)
         .cookie('refreshToken', refreshToken, options)
         .json(
-            new ApiResponse(200, 'user login Successfully', user)
+            new ApiResponse(200, 'user login Successfully', {
+                user,
+                accessToken
+            })
         )
 
 
@@ -158,7 +162,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         .json(
             new ApiResponse(200, 'new AccessToken is generated succesfully', {
                 user,
-                accessToken, 
+                accessToken,
                 refreshToken
             })
         )

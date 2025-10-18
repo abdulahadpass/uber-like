@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { validationResult } from "express-validator";
 import { Captain } from "../models/captain.model.js";
+import { User } from "../models/user.model.js";
 
 
 const generatedAccessTokenRefresToken = async (captainId) => {
@@ -47,8 +48,12 @@ const registerCaptian = asyncHandler(async (req, res) => {
             plate: vehicle.plate,
             capacity: vehicle.capacity,
             vehicleType: vehicle.vehicleType
-        }
+        },
+
     })
+    const user = await User.findById(req.user._id)
+    user.role = 'DRIVER'
+    await user.save()
     if (!createdCaptain) {
         throw new ApiError(400, 'captain not created')
     }
@@ -77,7 +82,7 @@ const loginCaptain = asyncHandler(async (req, res) => {
     if (!checkPassword) {
         throw new ApiError(400, 'invalid password')
     }
-    
+
     const { accessToken, refreshToken } = await generatedAccessTokenRefresToken(findCaptain._id)
 
     const options = {
